@@ -13,6 +13,7 @@ dependencies:
   - pytorch::pytorch
   - pytorch::torchvision
   - pytorch::torchaudio
+  - gym
   - pip:
     - termcolor==1.1.0
     - git+git://github.com/deepmind/dm_control.git
