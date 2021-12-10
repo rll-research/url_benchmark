@@ -143,14 +143,9 @@ class SMMAgent(DDPGAgent):
 
         kwargs["meta_dim"] = self.z_dim
         super().__init__(**kwargs)
-        if False and self.obs_type == 'pixels' and z_dim == 1:
-            self.pixels = True
-            self.smm = PSMM(kwargs['obs_shape'], z_dim, hidden_dim=kwargs['hidden_dim'], vae_beta=vae_beta, device=kwargs['device']).to(kwargs['device'])
-        else:
-            self.pixels = False
-            # self.obs_dim is now the real obs_dim (or repr_dim) + z_dim
-            self.smm = SMM(self.obs_dim - z_dim, z_dim, hidden_dim=kwargs['hidden_dim'], vae_beta=vae_beta, device=kwargs['device']).to(kwargs['device'])
-            self.pred_optimizer = torch.optim.Adam(self.smm.z_pred_net.parameters(), lr=sp_lr)
+        # self.obs_dim is now the real obs_dim (or repr_dim) + z_dim
+        self.smm = SMM(self.obs_dim - z_dim, z_dim, hidden_dim=kwargs['hidden_dim'], vae_beta=vae_beta, device=kwargs['device']).to(kwargs['device'])
+        self.pred_optimizer = torch.optim.Adam(self.smm.z_pred_net.parameters(), lr=sp_lr)
         self.vae_optimizer = torch.optim.Adam(self.smm.vae.parameters(), lr=vae_lr)
 
         self.smm.train()
@@ -206,8 +201,12 @@ class SMMAgent(DDPGAgent):
         metrics = dict()
         loss, h_s_z = self.smm.vae.loss(obs_z)
         self.vae_optimizer.zero_grad()
+        if self.encoder_opt is not None:
+            self.encoder_opt.zero_grad(set_to_none=True)
         loss.backward()
         self.vae_optimizer.step()
+        if self.encoder_opt is not None:
+            self.encoder_opt.step()
 
         metrics['loss_vae'] = loss.cpu().item()
 
@@ -235,36 +234,29 @@ class SMMAgent(DDPGAgent):
         obs, action, extr_reward, discount, next_obs, z = utils.to_torch(
             batch, self.device)
 
-        if self.pixels:
-            pixel_obs = obs
 
         obs = self.aug_and_encode(obs)
         with torch.no_grad():
             next_obs = self.aug_and_encode(next_obs)
-        obs_z = torch.cat([obs.detach(), z], dim=1) # do not learn encoder in the VAE
+        obs_z = torch.cat([obs, z], dim=1) # do not learn encoder in the VAE
         next_obs_z = torch.cat([next_obs, z], dim=1)
 
         if self.reward_free:
-            if self.pixels:
-                vae_metrics, h_s = self.update_vae(pixel_obs.float())
-                intr_reward = self.state_ent_coef * h_s
-            else:
-                vae_metrics, h_s_z = self.update_vae(obs_z)
-                pred_metrics, h_z_s = self.update_pred(obs.detach(), z)
+            vae_metrics, h_s_z = self.update_vae(obs_z)
+            pred_metrics, h_z_s = self.update_pred(obs.detach(), z)
 
-                h_z = np.log(self.z_dim)  # One-hot z encoding
-                h_z *= torch.ones_like(extr_reward).to(self.device)
+            h_z = np.log(self.z_dim)  # One-hot z encoding
+            h_z *= torch.ones_like(extr_reward).to(self.device)
 
-                pred_log_ratios = self.state_ent_coef * h_s_z.detach() # p^*(s) is ignored, as state space dimension is inaccessible from pixel input
-                intr_reward = pred_log_ratios + self.latent_ent_coef * h_z + self.latent_cond_ent_coef * h_z_s.detach()
+            pred_log_ratios = self.state_ent_coef * h_s_z.detach() # p^*(s) is ignored, as state space dimension is inaccessible from pixel input
+            intr_reward = pred_log_ratios + self.latent_ent_coef * h_z + self.latent_cond_ent_coef * h_z_s.detach()
             reward = intr_reward
         else:
             reward = extr_reward
 
         if self.use_tb or self.use_wandb:
             metrics.update(vae_metrics)
-            if not self.pixels:
-                metrics.update(pred_metrics)
+            metrics.update(pred_metrics)
             metrics['intr_reward'] = intr_reward.mean().item()
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
@@ -275,7 +267,7 @@ class SMMAgent(DDPGAgent):
             
         # update critic
         metrics.update(self.update_critic(
-                obs_z, action, reward, discount, next_obs_z, step))
+                obs_z.detach(), action, reward, discount, next_obs_z.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs_z.detach(), step))

@@ -191,7 +191,7 @@ class ProtoAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs, action, reward, discount, next_obs, step))
+            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

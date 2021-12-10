@@ -123,6 +123,7 @@ class DDPGAgent:
                  batch_size, stddev_clip, init_critic, use_tb, use_wandb, meta_dim=0):
         self.reward_free = reward_free
         self.obs_type = obs_type
+        self.obs_shape = obs_shape
         self.action_dim = action_shape[0]
         self.hidden_dim = hidden_dim
         self.lr = lr

@@ -113,7 +113,7 @@ class APSAgent(DDPGAgent):
         self.pbe = utils.PBE(rms, knn_clip, knn_k, knn_avg, knn_rms, self.device)
 
         # optimizers
-        self.aps_optimizer = torch.optim.Adam(self.aps.parameters(), lr=self.lr)
+        self.aps_opt = torch.optim.Adam(self.aps.parameters(), lr=self.lr)
 
         self.train()
         self.critic_target.train()
@@ -143,9 +143,14 @@ class APSAgent(DDPGAgent):
 
         loss = self.compute_aps_loss(next_obs, task)
 
-        self.aps_optimizer.zero_grad(set_to_none=True)
+        self.aps_opt.zero_grad(set_to_none=True)
+        if self.encoder_opt is not None:
+            self.encoder_opt.zero_grad(set_to_none=True)
         loss.backward()
-        self.aps_optimizer.step()
+        self.aps_opt.step()
+        if self.encoder_opt is not None:
+            self.encoder_opt.step()
+
 
         if self.use_tb or self.use_wandb:
             metrics['aps_loss'] = loss.item()
@@ -183,12 +188,11 @@ class APSAgent(DDPGAgent):
 
         # augment and encode
         obs = self.aug_and_encode(obs)
-        with torch.no_grad():
-            next_obs = self.aug_and_encode(next_obs)
+        next_obs = self.aug_and_encode(next_obs)
             
         if self.reward_free:
             # freeze successor features at finetuning phase
-            metrics.update(self.update_aps(task, next_obs.detach(), step))
+            metrics.update(self.update_aps(task, next_obs, step))
 
             with torch.no_grad():
                 intr_ent_reward, intr_sf_reward = self.compute_intr_reward(task, next_obs, step)
@@ -218,7 +222,7 @@ class APSAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs, action, reward, discount, next_obs, task, step))
+            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), task, step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), task, step))
