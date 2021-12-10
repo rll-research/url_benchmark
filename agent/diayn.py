@@ -1,14 +1,14 @@
+import math
+from collections import OrderedDict
+
 import hydra
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dm_env import specs
-import math
-from collections import OrderedDict
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -48,8 +48,7 @@ class DIAYNAgent(DDPGAgent):
         # loss criterion
         self.diayn_criterion = nn.CrossEntropyLoss()
         # optimizers
-        self.diayn_opt = torch.optim.Adam(self.diayn.parameters(),
-                                                lr=self.lr)
+        self.diayn_opt = torch.optim.Adam(self.diayn.parameters(), lr=self.lr)
 
         self.diayn.train()
 
@@ -145,7 +144,7 @@ class DIAYNAgent(DDPGAgent):
         if self.use_tb or self.use_wandb:
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
-            
+
         if not self.update_encoder:
             obs = obs.detach()
             next_obs = next_obs.detach()
@@ -156,7 +155,8 @@ class DIAYNAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

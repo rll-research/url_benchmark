@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -100,8 +99,7 @@ class ICMAgent(DDPGAgent):
             next_obs = self.aug_and_encode(next_obs)
 
         if self.reward_free:
-            metrics.update(
-                self.update_icm(obs, action, next_obs, step))
+            metrics.update(self.update_icm(obs, action, next_obs, step))
 
             with torch.no_grad():
                 intr_reward = self.compute_intr_reward(obs, action, next_obs,
@@ -123,7 +121,8 @@ class ICMAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

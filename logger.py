@@ -5,15 +5,14 @@ from collections import defaultdict
 import numpy as np
 import torch
 import torchvision
+import wandb
 from termcolor import colored
 from torch.utils.tensorboard import SummaryWriter
-import wandb
 
 COMMON_TRAIN_FORMAT = [('frame', 'F', 'int'), ('step', 'S', 'int'),
                        ('episode', 'E', 'int'), ('episode_length', 'L', 'int'),
                        ('episode_reward', 'R', 'float'),
-                       ('fps', 'FPS', 'float'),
-                       ('total_time', 'T', 'time')]
+                       ('fps', 'FPS', 'float'), ('total_time', 'T', 'time')]
 
 COMMON_EVAL_FORMAT = [('frame', 'F', 'int'), ('step', 'S', 'int'),
                       ('episode', 'E', 'int'), ('episode_length', 'L', 'int'),
@@ -119,7 +118,7 @@ class MetersGroup(object):
         data = self._prime_meters()
         data['frame'] = step
         if self.use_wandb:
-            wandb_data = {prefix + '/' + key: val for key,val in data.items()}
+            wandb_data = {prefix + '/' + key: val for key, val in data.items()}
             self._dump_to_wandb(data=wandb_data)
         self._dump_to_csv(data)
         self._dump_to_console(data, prefix)

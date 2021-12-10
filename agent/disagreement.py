@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -102,8 +101,7 @@ class DisagreementAgent(DDPGAgent):
 
         if self.reward_free:
             metrics.update(
-                self.update_disagreement(obs, action,
-                                         next_obs, step))
+                self.update_disagreement(obs, action, next_obs, step))
 
             with torch.no_grad():
                 intr_reward = self.compute_intr_reward(obs, action, next_obs,
@@ -118,14 +116,15 @@ class DisagreementAgent(DDPGAgent):
         if self.use_tb or self.use_wandb:
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
-            
+
         if not self.update_encoder:
             obs = obs.detach()
             next_obs = next_obs.detach()
 
         # update critic
         metrics.update(
-            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

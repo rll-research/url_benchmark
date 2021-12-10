@@ -11,7 +11,15 @@ from agent.ddpg import DDPGAgent
 
 
 class RND(nn.Module):
-    def __init__(self, obs_dim, hidden_dim, rnd_rep_dim, encoder, aug, obs_shape, obs_type, clip_val=5.):
+    def __init__(self,
+                 obs_dim,
+                 hidden_dim,
+                 rnd_rep_dim,
+                 encoder,
+                 aug,
+                 obs_shape,
+                 obs_type,
+                 clip_val=5.):
         super().__init__()
         self.clip_val = clip_val
         self.aug = aug
@@ -21,15 +29,13 @@ class RND(nn.Module):
         else:
             self.normalize_obs = nn.BatchNorm1d(obs_shape[0], affine=False)
 
-        self.predictor = nn.Sequential(encoder,
-                                       nn.Linear(obs_dim, hidden_dim),
+        self.predictor = nn.Sequential(encoder, nn.Linear(obs_dim, hidden_dim),
                                        nn.ReLU(),
                                        nn.Linear(hidden_dim, hidden_dim),
                                        nn.ReLU(),
                                        nn.Linear(hidden_dim, rnd_rep_dim))
         self.target = nn.Sequential(copy.deepcopy(encoder),
-                                    nn.Linear(obs_dim, hidden_dim),
-                                    nn.ReLU(),
+                                    nn.Linear(obs_dim, hidden_dim), nn.ReLU(),
                                     nn.Linear(hidden_dim, hidden_dim),
                                     nn.ReLU(),
                                     nn.Linear(hidden_dim, rnd_rep_dim))
@@ -55,14 +61,13 @@ class RNDAgent(DDPGAgent):
         self.rnd_scale = rnd_scale
         self.update_encoder = update_encoder
 
-        self.rnd = RND(self.obs_dim, self.hidden_dim,
-                       rnd_rep_dim, self.encoder, self.aug,
-                       self.obs_shape, self.obs_type).to(self.device)
+        self.rnd = RND(self.obs_dim, self.hidden_dim, rnd_rep_dim,
+                       self.encoder, self.aug, self.obs_shape,
+                       self.obs_type).to(self.device)
         self.intrinsic_reward_rms = utils.RMS(device=self.device)
 
         # optimizers
-        self.rnd_opt = torch.optim.Adam(self.rnd.parameters(),
-                                              lr=self.lr)
+        self.rnd_opt = torch.optim.Adam(self.rnd.parameters(), lr=self.lr)
 
         self.rnd.train()
 
@@ -135,7 +140,8 @@ class RNDAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -22,10 +21,9 @@ class ICM(nn.Module):
             nn.Linear(icm_rep_dim + action_dim, hidden_dim), nn.ReLU(),
             nn.Linear(hidden_dim, icm_rep_dim))
 
-        self.backward_net = nn.Sequential(nn.Linear(2 * icm_rep_dim, hidden_dim),
-                                          nn.ReLU(),
-                                          nn.Linear(hidden_dim, action_dim),
-                                          nn.Tanh())
+        self.backward_net = nn.Sequential(
+            nn.Linear(2 * icm_rep_dim, hidden_dim), nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim), nn.Tanh())
 
         self.apply(utils.weight_init)
 
@@ -55,24 +53,25 @@ class ICM(nn.Module):
 
 
 class ICMAPTAgent(DDPGAgent):
-    def __init__(self, icm_scale, knn_rms, knn_k, knn_avg, knn_clip, update_encoder, icm_rep_dim, **kwargs):
+    def __init__(self, icm_scale, knn_rms, knn_k, knn_avg, knn_clip,
+                 update_encoder, icm_rep_dim, **kwargs):
         super().__init__(**kwargs)
 
         self.icm_scale = icm_scale
         self.update_encoder = update_encoder
 
-        self.icm = ICM(self.obs_dim, self.action_dim,
-                       self.hidden_dim, icm_rep_dim).to(self.device)
+        self.icm = ICM(self.obs_dim, self.action_dim, self.hidden_dim,
+                       icm_rep_dim).to(self.device)
 
         # optimizers
-        self.icm_opt = torch.optim.Adam(self.icm.parameters(),
-                                              lr=self.lr)
+        self.icm_opt = torch.optim.Adam(self.icm.parameters(), lr=self.lr)
 
         self.icm.train()
 
         # particle-based entropy
         rms = utils.RMS(self.device)
-        self.pbe = utils.PBE(rms, knn_clip, knn_k, knn_avg, knn_rms, self.device)
+        self.pbe = utils.PBE(rms, knn_clip, knn_k, knn_avg, knn_rms,
+                             self.device)
 
     def update_icm(self, obs, action, next_obs, step):
         metrics = dict()
@@ -116,8 +115,7 @@ class ICMAPTAgent(DDPGAgent):
             next_obs = self.aug_and_encode(next_obs)
 
         if self.reward_free:
-            metrics.update(
-                self.update_icm(obs, action, next_obs, step))
+            metrics.update(self.update_icm(obs, action, next_obs, step))
 
             with torch.no_grad():
                 intr_reward = self.compute_intr_reward(obs, action, next_obs,
@@ -137,7 +135,8 @@ class ICMAPTAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs.detach(), action, reward, discount, next_obs.detach(), step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))
