@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -55,7 +54,7 @@ class DisagreementAgent(DDPGAgent):
                                          self.hidden_dim).to(self.device)
 
         # optimizers
-        self.disagreement_optimizer = torch.optim.Adam(
+        self.disagreement_opt = torch.optim.Adam(
             self.disagreement.parameters(), lr=self.lr)
 
         self.disagreement.train()
@@ -67,9 +66,13 @@ class DisagreementAgent(DDPGAgent):
 
         loss = error.mean()
 
-        self.disagreement_optimizer.zero_grad(set_to_none=True)
+        self.disagreement_opt.zero_grad(set_to_none=True)
+        if self.encoder_opt is not None:
+            self.encoder_opt.zero_grad(set_to_none=True)
         loss.backward()
-        self.disagreement_optimizer.step()
+        self.disagreement_opt.step()
+        if self.encoder_opt is not None:
+            self.encoder_opt.step()
 
         if self.use_tb or self.use_wandb:
             metrics['disagreement_loss'] = loss.item()
@@ -98,8 +101,7 @@ class DisagreementAgent(DDPGAgent):
 
         if self.reward_free:
             metrics.update(
-                self.update_disagreement(obs.detach(), action,
-                                         next_obs.detach(), step))
+                self.update_disagreement(obs, action, next_obs, step))
 
             with torch.no_grad():
                 intr_reward = self.compute_intr_reward(obs, action, next_obs,
@@ -114,14 +116,15 @@ class DisagreementAgent(DDPGAgent):
         if self.use_tb or self.use_wandb:
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
-            
+
         if not self.update_encoder:
             obs = obs.detach()
             next_obs = next_obs.detach()
 
         # update critic
         metrics.update(
-            self.update_critic(obs, action, reward, discount, next_obs, step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

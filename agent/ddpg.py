@@ -1,9 +1,10 @@
+from collections import OrderedDict
+
 import hydra
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from collections import OrderedDict
 
 import utils
 
@@ -117,12 +118,30 @@ class Critic(nn.Module):
 
 
 class DDPGAgent:
-    def __init__(self, name, reward_free, obs_type, obs_shape, action_shape,
-                 device, lr, feature_dim, hidden_dim, critic_target_tau,
-                 num_expl_steps, update_every_steps, stddev_schedule, nstep,
-                 batch_size, stddev_clip, init_critic, use_tb, use_wandb, meta_dim=0):
+    def __init__(self,
+                 name,
+                 reward_free,
+                 obs_type,
+                 obs_shape,
+                 action_shape,
+                 device,
+                 lr,
+                 feature_dim,
+                 hidden_dim,
+                 critic_target_tau,
+                 num_expl_steps,
+                 update_every_steps,
+                 stddev_schedule,
+                 nstep,
+                 batch_size,
+                 stddev_clip,
+                 init_critic,
+                 use_tb,
+                 use_wandb,
+                 meta_dim=0):
         self.reward_free = reward_free
         self.obs_type = obs_type
+        self.obs_shape = obs_shape
         self.action_dim = action_shape[0]
         self.hidden_dim = hidden_dim
         self.lr = lr

@@ -13,16 +13,16 @@ use_tb: ${use_tb}
 use_wandb: ${use_wandb}
 num_expl_steps: ??? # to be specified later
 hidden_dim: 1024
-feature_dim: 1024
-apt_rep_dim: 512
+feature_dim: 50
+icm_rep_dim: 512
 stddev_schedule: 0.2
 stddev_clip: 0.3
 icm_scale: 1.0
 nstep: 3
 batch_size: 1024
 init_critic: true
-knn_rms: true
+knn_rms: false
 knn_k: 12
 knn_avg: true
-knn_clip: 0.0001
+knn_clip: 0.0
 update_encoder: ${update_encoder}

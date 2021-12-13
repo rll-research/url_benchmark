@@ -1,14 +1,14 @@
+import math
+from collections import OrderedDict
+
 import hydra
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dm_env import specs
-import math
-from collections import OrderedDict
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -48,8 +48,7 @@ class DIAYNAgent(DDPGAgent):
         # loss criterion
         self.diayn_criterion = nn.CrossEntropyLoss()
         # optimizers
-        self.diayn_optimizer = torch.optim.Adam(self.diayn.parameters(),
-                                                lr=self.lr)
+        self.diayn_opt = torch.optim.Adam(self.diayn.parameters(), lr=self.lr)
 
         self.diayn.train()
 
@@ -73,9 +72,13 @@ class DIAYNAgent(DDPGAgent):
 
         loss, df_accuracy = self.compute_diayn_loss(next_obs, skill)
 
-        self.diayn_optimizer.zero_grad()
+        self.diayn_opt.zero_grad()
+        if self.encoder_opt is not None:
+            self.encoder_opt.zero_grad(set_to_none=True)
         loss.backward()
-        self.diayn_optimizer.step()
+        self.diayn_opt.step()
+        if self.encoder_opt is not None:
+            self.encoder_opt.step()
 
         if self.use_tb or self.use_wandb:
             metrics['diayn_loss'] = loss.item()
@@ -124,11 +127,10 @@ class DIAYNAgent(DDPGAgent):
 
         # augment and encode
         obs = self.aug_and_encode(obs)
-        with torch.no_grad():
-            next_obs = self.aug_and_encode(next_obs)
+        next_obs = self.aug_and_encode(next_obs)
 
         if self.reward_free:
-            metrics.update(self.update_diayn(skill, next_obs.detach(), step))
+            metrics.update(self.update_diayn(skill, next_obs, step))
 
             with torch.no_grad():
                 intr_reward = self.compute_intr_reward(skill, next_obs, step)
@@ -142,7 +144,7 @@ class DIAYNAgent(DDPGAgent):
         if self.use_tb or self.use_wandb:
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
-            
+
         if not self.update_encoder:
             obs = obs.detach()
             next_obs = next_obs.detach()
@@ -153,7 +155,8 @@ class DIAYNAgent(DDPGAgent):
 
         # update critic
         metrics.update(
-            self.update_critic(obs, action, reward, discount, next_obs, step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))
