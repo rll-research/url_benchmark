@@ -2,7 +2,10 @@ DOMAINS = [
     'walker',
     'quadruped',
     'jaco',
+    'acrobot'
 ]
+
+ACROBOT_TASKS = ['acrobot_balance']
 
 WALKER_TASKS = [
     'walker_stand',
@@ -25,9 +28,10 @@ JACO_TASKS = [
     'jaco_reach_bottom_right',
 ]
 
-TASKS = WALKER_TASKS + QUADRUPED_TASKS + JACO_TASKS
+TASKS = WALKER_TASKS + QUADRUPED_TASKS + JACO_TASKS + ACROBOT_TASKS
 
 PRIMAL_TASKS = {
+    'acrobot': 'acrobot_balance'
     'walker': 'walker_stand',
     'jaco': 'jaco_reach_top_left',
     'quadruped': 'quadruped_walk'
