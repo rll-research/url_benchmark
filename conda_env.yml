@@ -24,7 +24,7 @@ dependencies:
     - pandas==1.3.0
     - ipdb==0.13.9
     - yapf==0.31.0
-    - mujoco_py==2.0.2.13
+    - mujoco_py==2.0.2.8
     - sklearn==0.0
     - matplotlib==3.4.2
     - opencv-python==4.5.3.56

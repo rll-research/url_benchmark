@@ -7,6 +7,8 @@ import os
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
 os.environ['MUJOCO_GL'] = 'egl'
 
+os.environ['MESA_GL_VERSION_OVERRIDE'] = '3.3'
+os.environ['MESA_GLSL_VERSION_OVERRIDE'] = '330'
 from pathlib import Path
 
 import hydra
@@ -97,6 +99,7 @@ class Workspace:
         self.timer = utils.Timer()
         self._global_step = 0
         self._global_episode = 0
+        print("environment initialization complete")
 
     @property
     def global_step(self):
@@ -157,13 +160,17 @@ class Workspace:
         meta = self.agent.init_meta()
         self.replay_storage.add(time_step, meta)
         self.train_video_recorder.init(time_step.observation)
+        print("video recorder initialized")
         metrics = None
         while train_until_step(self.global_step):
+            print("step done")
             if time_step.last():
+                print("final step...")
                 self._global_episode += 1
                 self.train_video_recorder.save(f'{self.global_frame}.mp4')
                 # wait until all the metrics schema is populated
                 if metrics is not None:
+                    print("got metrics")
                     # log stats
                     elapsed_time, total_time = self.timer.reset()
                     episode_frame = episode_step * self.cfg.action_repeat
@@ -228,6 +235,7 @@ class Workspace:
 @hydra.main(config_path='.', config_name='pretrain')
 def main(cfg):
     from pretrain import Workspace as W
+    os.environ["MUJOCO_GL"] = "egl"
     root_dir = Path.cwd()
     workspace = W(cfg)
     snapshot = root_dir / 'snapshot.pt'

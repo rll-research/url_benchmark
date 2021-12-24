@@ -1,24 +1,29 @@
+import os
+from pathlib import Path
 import warnings
+from time import sleep
+
+from dm_env import specs
+import hydra
+import numpy as np
+import torch
+
+import dmc
+from logger import Logger
+from replay_buffer import ReplayBufferStorage, make_replay_loader
+import utils
+from video import TrainVideoRecorder, VideoRecorder
+
+import wandb
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
-import os
+
 
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
 os.environ['MUJOCO_GL'] = 'egl'
 
-from pathlib import Path
 
-import hydra
-import numpy as np
-import torch
-from dm_env import specs
-
-import dmc
-import utils
-from logger import Logger
-from replay_buffer import ReplayBufferStorage, make_replay_loader
-from video import TrainVideoRecorder, VideoRecorder
 
 torch.backends.cudnn.benchmark = True
 
@@ -41,6 +46,15 @@ class Workspace:
         self.device = torch.device(cfg.device)
 
         # create logger
+        if cfg.use_wandb:
+            exp_name = '_'.join([cfg.experiment,
+                cfg.agent.name,
+                cfg.task,
+                cfg.obs_type,
+                str(cfg.seed),
+                "finetune"])
+            wandb.init(project="urlb",group=cfg.agent.name,name=exp_name)
+
         self.logger = Logger(self.work_dir,
                              use_tb=cfg.use_tb,
                              use_wandb=cfg.use_wandb)
@@ -221,11 +235,13 @@ class Workspace:
     def load_snapshot(self):
         snapshot_base_dir = Path(self.cfg.snapshot_base_dir)
         domain, _ = self.cfg.task.split('_', 1)
-        snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.agent.name
+        # snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.agent.name
+        snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / "icm"
 
         def try_load(seed):
             snapshot = snapshot_dir / str(
                 seed) / f'snapshot_{self.cfg.snapshot_ts}.pt'
+            print(f"loading snapshot {snapshot}")
             if not snapshot.exists():
                 return None
             with snapshot.open('rb') as f:
@@ -236,12 +252,18 @@ class Workspace:
         payload = try_load(self.cfg.seed)
         if payload is not None:
             return payload
+        print(f"failed loading snapshot at: {snapshot_dir}")
         # otherwise try random seed
+        attempts = 10
         while True:
+            attempts -= 1
+            sleep(1)
             seed = np.random.randint(1, 11)
             payload = try_load(seed)
             if payload is not None:
                 return payload
+            if not attempts:
+                break
         return None
 
 
