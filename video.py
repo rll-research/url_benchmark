@@ -3,8 +3,14 @@ import imageio
 import numpy as np
 import wandb
 
+
 class VideoRecorder:
-    def __init__(self, root_dir, render_size=256, fps=20, camera_id=0, use_wandb=False):
+    def __init__(self,
+                 root_dir,
+                 render_size=256,
+                 fps=20,
+                 camera_id=0,
+                 use_wandb=False):
         if root_dir is not None:
             self.save_dir = root_dir / 'eval_video'
             self.save_dir.mkdir(exist_ok=True)
@@ -34,9 +40,12 @@ class VideoRecorder:
             self.frames.append(frame)
 
     def log_to_wandb(self):
-        frames = np.transpose(np.array(self.frames),(0,3,1,2))
+        frames = np.transpose(np.array(self.frames), (0, 3, 1, 2))
         fps, skip = 6, 8
-        wandb.log({'eval/video': wandb.Video(frames[::skip,:,::2,::2], fps=fps,format="gif")})
+        wandb.log({
+            'eval/video':
+            wandb.Video(frames[::skip, :, ::2, ::2], fps=fps, format="gif")
+        })
 
     def save(self, file_name):
         if self.enabled:
@@ -47,7 +56,12 @@ class VideoRecorder:
 
 
 class TrainVideoRecorder:
-    def __init__(self, root_dir, render_size=256, fps=20, camera_id=0, use_wandb=False):
+    def __init__(self,
+                 root_dir,
+                 render_size=256,
+                 fps=20,
+                 camera_id=0,
+                 use_wandb=False):
         if root_dir is not None:
             self.save_dir = root_dir / 'train_video'
             self.save_dir.mkdir(exist_ok=True)
@@ -73,9 +87,12 @@ class TrainVideoRecorder:
             self.frames.append(frame)
 
     def log_to_wandb(self):
-        frames = np.transpose(np.array(self.frames),(0,3,1,2))
+        frames = np.transpose(np.array(self.frames), (0, 3, 1, 2))
         fps, skip = 6, 8
-        wandb.log({'train/video': wandb.Video(frames[::skip,:,::2,::2], fps=fps,format="gif")})
+        wandb.log({
+            'train/video':
+            wandb.Video(frames[::skip, :, ::2, ::2], fps=fps, format="gif")
+        })
 
     def save(self, file_name):
         if self.enabled:

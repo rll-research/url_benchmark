@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -25,7 +24,6 @@ class ICM(nn.Module):
         self.apply(utils.weight_init)
 
     def forward(self, obs, action, next_obs):
-        #import ipdb; ipdb.set_trace()
         assert obs.shape[0] == next_obs.shape[0]
         assert obs.shape[0] == action.shape[0]
 
@@ -54,8 +52,7 @@ class ICMAgent(DDPGAgent):
                        self.hidden_dim).to(self.device)
 
         # optimizers
-        self.icm_optimizer = torch.optim.Adam(self.icm.parameters(),
-                                              lr=self.lr)
+        self.icm_opt = torch.optim.Adam(self.icm.parameters(), lr=self.lr)
 
         self.icm.train()
 
@@ -66,9 +63,13 @@ class ICMAgent(DDPGAgent):
 
         loss = forward_error.mean() + backward_error.mean()
 
-        self.icm_optimizer.zero_grad(set_to_none=True)
+        self.icm_opt.zero_grad(set_to_none=True)
+        if self.encoder_opt is not None:
+            self.encoder_opt.zero_grad(set_to_none=True)
         loss.backward()
-        self.icm_optimizer.step()
+        self.icm_opt.step()
+        if self.encoder_opt is not None:
+            self.encoder_opt.step()
 
         if self.use_tb or self.use_wandb:
             metrics['icm_loss'] = loss.item()
@@ -98,8 +99,7 @@ class ICMAgent(DDPGAgent):
             next_obs = self.aug_and_encode(next_obs)
 
         if self.reward_free:
-            metrics.update(
-                self.update_icm(obs.detach(), action, next_obs.detach(), step))
+            metrics.update(self.update_icm(obs, action, next_obs, step))
 
             with torch.no_grad():
                 intr_reward = self.compute_intr_reward(obs, action, next_obs,
@@ -114,14 +114,15 @@ class ICMAgent(DDPGAgent):
         if self.use_tb or self.use_wandb:
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
-            
+
         if not self.update_encoder:
             obs = obs.detach()
             next_obs = next_obs.detach()
 
         # update critic
         metrics.update(
-            self.update_critic(obs, action, reward, discount, next_obs, step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))

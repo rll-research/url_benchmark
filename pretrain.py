@@ -14,6 +14,7 @@ from pathlib import Path
 import hydra
 import numpy as np
 import torch
+import wandb
 from dm_env import specs
 
 import dmc
@@ -21,7 +22,6 @@ import utils
 from logger import Logger
 from replay_buffer import ReplayBufferStorage, make_replay_loader
 from video import TrainVideoRecorder, VideoRecorder
-import wandb
 
 torch.backends.cudnn.benchmark = True
 
@@ -47,18 +47,21 @@ class Workspace:
 
         # create logger
         if cfg.use_wandb:
-            exp_name = '_'.join([cfg.experiment,cfg.agent.name,cfg.domain,cfg.obs_type,str(cfg.seed)])
-            wandb.init(project="urlb",group=cfg.agent.name,name=exp_name)
+            exp_name = '_'.join([
+                cfg.experiment, cfg.agent.name, cfg.domain, cfg.obs_type,
+                str(cfg.seed)
+            ])
+            wandb.init(project="urlb", group=cfg.agent.name, name=exp_name)
 
-        self.logger = Logger(self.work_dir, use_tb=cfg.use_tb,use_wandb=cfg.use_wandb)
+        self.logger = Logger(self.work_dir,
+                             use_tb=cfg.use_tb,
+                             use_wandb=cfg.use_wandb)
         # create envs
         task = PRIMAL_TASKS[self.cfg.domain]
-        self.train_env = dmc.make(task, cfg.obs_type,
-                                  cfg.frame_stack, cfg.action_repeat,
-                                  cfg.seed)
-        self.eval_env = dmc.make(task, cfg.obs_type,
-                                 cfg.frame_stack, cfg.action_repeat,
-                                 cfg.seed)
+        self.train_env = dmc.make(task, cfg.obs_type, cfg.frame_stack,
+                                  cfg.action_repeat, cfg.seed)
+        self.eval_env = dmc.make(task, cfg.obs_type, cfg.frame_stack,
+                                 cfg.action_repeat, cfg.seed)
 
         # create agent
         self.agent = make_agent(cfg.obs_type,
@@ -80,20 +83,21 @@ class Workspace:
                                                   self.work_dir / 'buffer')
 
         # create replay buffer
-        self.replay_loader = make_replay_loader(
-            self.replay_storage, cfg.replay_buffer_size,
-            cfg.batch_size, cfg.replay_buffer_num_workers,
-            False, cfg.nstep, cfg.discount)
+        self.replay_loader = make_replay_loader(self.replay_storage,
+                                                cfg.replay_buffer_size,
+                                                cfg.batch_size,
+                                                cfg.replay_buffer_num_workers,
+                                                False, cfg.nstep, cfg.discount)
         self._replay_iter = None
 
         # create video recorders
         self.video_recorder = VideoRecorder(
             self.work_dir if cfg.save_video else None,
-            camera_id= 0 if 'quadruped' not in self.cfg.domain else 2,
+            camera_id=0 if 'quadruped' not in self.cfg.domain else 2,
             use_wandb=self.cfg.use_wandb)
         self.train_video_recorder = TrainVideoRecorder(
             self.work_dir if cfg.save_train_video else None,
-            camera_id= 0 if 'quadruped' not in self.cfg.domain else 2,
+            camera_id=0 if 'quadruped' not in self.cfg.domain else 2,
             use_wandb=self.cfg.use_wandb)
 
         self.timer = utils.Timer()
