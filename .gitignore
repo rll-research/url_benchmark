@@ -1,2 +1,6 @@
 **/.vimspector.json
 
+**/__pycache__/
+
+exp_local/
+

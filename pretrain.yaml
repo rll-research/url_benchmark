@@ -34,7 +34,7 @@ use_tb: true
 use_wandb: true
 # experiment
 experiment: exp
-
+group_name: test
 
 hydra:
   run:

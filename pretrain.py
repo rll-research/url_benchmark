@@ -5,10 +5,11 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 import os
 
 os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
-os.environ['MUJOCO_GL'] = 'egl'
+os.environ['MUJOCO_GL'] = 'osmesa'
 
 os.environ['MESA_GL_VERSION_OVERRIDE'] = '3.3'
 os.environ['MESA_GLSL_VERSION_OVERRIDE'] = '330'
+
 from pathlib import Path
 
 import hydra
@@ -51,7 +52,7 @@ class Workspace:
                 cfg.experiment, cfg.agent.name, cfg.domain, cfg.obs_type,
                 str(cfg.seed)
             ])
-            wandb.init(project="urlb", group=cfg.agent.name, name=exp_name)
+            wandb.init(project="urlb", entity="urlb-gqn-test", group=cfg.group_name, name=exp_name)
 
         self.logger = Logger(self.work_dir,
                              use_tb=cfg.use_tb,
@@ -167,9 +168,7 @@ class Workspace:
         print("video recorder initialized")
         metrics = None
         while train_until_step(self.global_step):
-            print("step done")
             if time_step.last():
-                print("final step...")
                 self._global_episode += 1
                 self.train_video_recorder.save(f'{self.global_frame}.mp4')
                 # wait until all the metrics schema is populated
