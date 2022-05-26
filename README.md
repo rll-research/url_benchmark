@@ -2,7 +2,7 @@
 
 URLB provides a set of leading algorithms for unsupervised reinforcement learning where agents first pre-train without access to extrinsic rewards and then are finetuned to downstream tasks.
 
-This codebase was adapted from [DrQv2](https://github.com/facebookresearch/drqv2). The DDPG agent and training scripts were developed by Denis Yarats. All co-authors contributed to developing individual baselines for URLB.
+This codebase was adapted from [DrQv2](https://github.com/facebookresearch/drqv2). The DDPG agent and training scripts were developed by Denis Yarats. All authors contributed to developing individual baselines for URLB.
 
 ## Requirements
 We assume you have access to a GPU that can run CUDA 10.2 and CUDNN 8. Then, the simplest way to install all required dependencies is to create an anaconda environment by running

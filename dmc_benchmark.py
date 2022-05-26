@@ -9,7 +9,6 @@ WALKER_TASKS = [
     'walker_walk',
     'walker_run',
     'walker_flip',
-    
 ]
 
 QUADRUPED_TASKS = [
@@ -17,7 +16,6 @@ QUADRUPED_TASKS = [
     'quadruped_run',
     'quadruped_stand',
     'quadruped_jump',
-    
 ]
 
 JACO_TASKS = [
@@ -25,7 +23,6 @@ JACO_TASKS = [
     'jaco_reach_top_right',
     'jaco_reach_bottom_left',
     'jaco_reach_bottom_right',
-    
 ]
 
 TASKS = WALKER_TASKS + QUADRUPED_TASKS + JACO_TASKS

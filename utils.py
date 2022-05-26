@@ -1,7 +1,7 @@
+import math
 import random
 import re
 import time
-import math
 
 import numpy as np
 import torch
@@ -265,7 +265,9 @@ class RMS(object):
         bs = x.size(0)
         delta = torch.mean(x, dim=0) - self.M
         new_M = self.M + delta * bs / (self.n + bs)
-        new_S = (self.S * self.n + torch.var(x, dim=0) * bs + torch.square(delta) * self.n * bs / (self.n + bs)) / (self.n + bs)
+        new_S = (self.S * self.n + torch.var(x, dim=0) * bs +
+                 torch.square(delta) * self.n * bs /
+                 (self.n + bs)) / (self.n + bs)
 
         self.M = new_M
         self.S = new_S
@@ -288,17 +290,29 @@ class PBE(object):
         source = target = rep
         b1, b2 = source.size(0), target.size(0)
         # (b1, 1, c) - (1, b2, c) -> (b1, 1, c) - (1, b2, c) -> (b1, b2, c) -> (b1, b2)
-        sim_matrix = torch.norm(source[:, None, :].view(b1, 1, -1) - target[None, :, :].view(1, b2, -1), dim=-1, p=2)
-        reward, _ = sim_matrix.topk(self.knn_k, dim=1, largest=False, sorted=True)  # (b1, k)
+        sim_matrix = torch.norm(source[:, None, :].view(b1, 1, -1) -
+                                target[None, :, :].view(1, b2, -1),
+                                dim=-1,
+                                p=2)
+        reward, _ = sim_matrix.topk(self.knn_k,
+                                    dim=1,
+                                    largest=False,
+                                    sorted=True)  # (b1, k)
         if not self.knn_avg:  # only keep k-th nearest neighbor
             reward = reward[:, -1]
             reward = reward.reshape(-1, 1)  # (b1, 1)
             reward /= self.rms(reward)[0] if self.knn_rms else 1.0
-            reward = torch.maximum(reward - self.knn_clip, torch.zeros_like(reward).to(self.device)) if self.knn_clip >= 0.0 else reward  # (b1, 1)
+            reward = torch.maximum(
+                reward - self.knn_clip,
+                torch.zeros_like(reward).to(self.device)
+            ) if self.knn_clip >= 0.0 else reward  # (b1, 1)
         else:  # average over all k nearest neighbors
             reward = reward.reshape(-1, 1)  # (b1 * k, 1)
             reward /= self.rms(reward)[0] if self.knn_rms else 1.0
-            reward = torch.maximum(reward - self.knn_clip, torch.zeros_like(reward).to(self.device)) if self.knn_clip >= 0.0 else reward
+            reward = torch.maximum(
+                reward - self.knn_clip,
+                torch.zeros_like(reward).to(
+                    self.device)) if self.knn_clip >= 0.0 else reward
             reward = reward.reshape((b1, self.knn_k))  # (b1, k)
             reward = reward.mean(dim=1, keepdim=True)  # (b1, 1)
         reward = torch.log(reward + 1.0)

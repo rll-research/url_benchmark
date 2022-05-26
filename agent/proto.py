@@ -1,13 +1,13 @@
+from copy import deepcopy
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import distributions as pyd
 from torch import jit
-from copy import deepcopy
 
 import utils
-
 from agent.ddpg import DDPGAgent
 
 
@@ -42,8 +42,8 @@ class Projector(nn.Module):
 
 
 class ProtoAgent(DDPGAgent):
-    def __init__(self, pred_dim, proj_dim, queue_size, num_protos,
-                 tau, encoder_target_tau, topk, update_encoder, **kwargs):
+    def __init__(self, pred_dim, proj_dim, queue_size, num_protos, tau,
+                 encoder_target_tau, topk, update_encoder, **kwargs):
         super().__init__(**kwargs)
         self.tau = tau
         self.encoder_target_tau = encoder_target_tau
@@ -109,7 +109,7 @@ class ProtoAgent(DDPGAgent):
         # enqueue candidates
         ptr = self.queue_ptr
         self.queue[ptr:ptr + self.num_protos] = z[candidates]
-        queue_ptr = (ptr + self.num_protos) % self.queue.shape[0]
+        self.queue_ptr = (ptr + self.num_protos) % self.queue.shape[0]
 
         # compute distances between the batch and the queue of candidates
         z_to_q = torch.norm(z[:, None, :] - self.queue[None, :, :], dim=2, p=2)
@@ -181,17 +181,17 @@ class ProtoAgent(DDPGAgent):
             metrics['extr_reward'] = extr_reward.mean().item()
             metrics['batch_reward'] = reward.mean().item()
 
-
         obs = self.encoder(obs)
         next_obs = self.encoder(next_obs)
-        
+
         if not self.update_encoder:
             obs = obs.detach()
             next_obs = next_obs.detach()
 
         # update critic
         metrics.update(
-            self.update_critic(obs, action, reward, discount, next_obs, step))
+            self.update_critic(obs.detach(), action, reward, discount,
+                               next_obs.detach(), step))
 
         # update actor
         metrics.update(self.update_actor(obs.detach(), step))
