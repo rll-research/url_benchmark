@@ -1,6 +1,16 @@
 import os
-from pathlib import Path
+
+
+
 import warnings
+
+os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
+os.environ['MUJOCO_GL'] = 'osmesa'
+
+os.environ['MESA_GL_VERSION_OVERRIDE'] = '3.3'
+os.environ['MESA_GLSL_VERSION_OVERRIDE'] = '330'
+
+from pathlib import Path
 from time import sleep
 
 from dm_env import specs
@@ -19,9 +29,6 @@ import wandb
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
-
-os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
-os.environ['MUJOCO_GL'] = 'egl'
 
 
 

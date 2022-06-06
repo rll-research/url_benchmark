@@ -12,7 +12,7 @@ action_repeat: 1 # set to 2 for pixels
 discount: 0.99
 # train settings
 num_train_frames: 2000010
-num_seed_frames: 4000
+num_seed_frames: 8000
 # eval
 eval_every_frames: 10000
 num_eval_episodes: 10
@@ -21,14 +21,14 @@ snapshots: [100000, 500000, 1000000, 2000000]
 snapshot_dir: ../../../models/${obs_type}/${domain}/${agent.name}/${seed}
 # replay buffer
 replay_buffer_size: 1000000
-replay_buffer_num_workers: 4
+replay_buffer_num_workers: 8
 batch_size: ${agent.batch_size}
 nstep: ${agent.nstep}
 update_encoder: true # should always be true for pre-training
 # misc
 seed: 1
 device: cuda
-save_video: true
+save_video: false
 save_train_video: false
 use_tb: true
 use_wandb: true
