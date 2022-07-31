@@ -243,7 +243,8 @@ class Workspace:
         snapshot_base_dir = Path(self.cfg.snapshot_base_dir)
         domain, _ = self.cfg.task.split('_', 1)
         # snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.agent.name
-        snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / "icm"
+        snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.pretrained_agent
+        # snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / "icm"
 
         def try_load(seed):
             snapshot = snapshot_dir / str(
