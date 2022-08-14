@@ -35,6 +35,7 @@ use_wandb: true
 # experiment
 experiment: exp
 group_name: test
+save_buffer: true
 
 hydra:
   run:

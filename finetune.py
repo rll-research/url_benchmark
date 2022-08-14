@@ -46,6 +46,10 @@ def make_agent(obs_type, obs_spec, action_spec, num_expl_steps, cfg):
 class Workspace:
     def __init__(self, cfg):
         self.work_dir = Path.cwd()
+        self.buffer_dir = self.work_dir
+        if cfg.buffer_dir is not "":
+            self.buffer_dir = Path(cfg.buffer_dir)
+
         print(f'workspace: {self.work_dir}')
 
         self.cfg = cfg
@@ -94,14 +98,14 @@ class Workspace:
 
         # create data storage
         self.replay_storage = ReplayBufferStorage(data_specs, meta_specs,
-                                                  self.work_dir / 'buffer')
+                                                  self.buffer_dir / 'buffer')
 
         # create replay buffer
         self.replay_loader = make_replay_loader(self.replay_storage,
                                                 cfg.replay_buffer_size,
                                                 cfg.batch_size,
                                                 cfg.replay_buffer_num_workers,
-                                                False, cfg.nstep, cfg.discount)
+                                                cfg.save_buffer, cfg.nstep, cfg.discount)
         self._replay_iter = None
 
         # create video recorders

@@ -12,17 +12,17 @@ action_repeat: 1 # set to 2 for pixels
 discount: 0.99
 # train settings
 num_train_frames: 2000010
-num_seed_frames: 8000
+num_seed_frames: 1 #rebuffered version, original was 8000
 # eval
 eval_every_frames: 10000
 num_eval_episodes: 10
 # pretrained
 snapshot_ts: 100000
 # default snapshot_base_dir: ./pretrained_models
-snapshot_base_dir: /home/daniel/Code/url_benchmark/rerun_snapshot
+snapshot_base_dir: /code/url_benchmark/models/
 # replay buffer
 replay_buffer_size: 1000000
-replay_buffer_num_workers: 8
+replay_buffer_num_workers: 0
 batch_size: ${agent.batch_size}
 nstep: ${agent.nstep}
 update_encoder: false # can be either true or false depending if we want to fine-tune encoder
@@ -35,7 +35,13 @@ use_tb: false
 use_wandb: true
 # experiment
 experiment: exp
-group_name: ddpg_clean_walk
+group_name: ddpg_rebuffered_walk
+# buffer_dir: /code/url_benchmark/exp_local/2022.08.11/135826_icm/
+# buffer_dir: /code/url_benchmark/exp_local/2022.08.13/201155_icm/
+# buffer_dir: /code/url_benchmark/exp_local/2022.08.13/201155_icm_run/
+buffer_dir: /code/url_benchmark/exp_local/2022.08.13/201155_icm_jump/
+save_buffer: true
+
 
 pretrained_agent: icm
 
