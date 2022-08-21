@@ -1,0 +1,5 @@
+1. finished running icm rebuffered pretraining to collect exploration buffers for walker and quadruped
+2. done finetuning using these buffers as total warmup buffers for 2*6 tasks
+3. compared results with RND finetuning. looks good, still vanilla RND better
+4. finished running RND rebuffered pretraining, collected exploration buffers (walker + quadruped)
+5. now need to tests all 6 tasks using RND buffers
