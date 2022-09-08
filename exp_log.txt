@@ -3,3 +3,18 @@
 3. compared results with RND finetuning. looks good, still vanilla RND better
 4. finished running RND rebuffered pretraining, collected exploration buffers (walker + quadruped)
 5. now need to tests all 6 tasks using RND buffers
+
+
+analyzed finetuning procedure to see how to count steps correctly, when using a buffer from pretraining.
+a global step is counted each episode, where each episode takes 1000 steps, also the count starts only after warmup.
+baseline starts after 8000 of warmup steps. there is a jump in performance in buffered version after 600K steps, when most of the buffer is from the current task.
+
+options to count steps:
+1. first collect all 2M transitions from the pretraining in the buffer,
+progress for the regular warmup steps, then train the network for X steps using only the pretraining buffer. the amount of steps should be similar to the number of batches currentlly taken in buffered versions, until 
+real task transitions start to apear. then continue preparing training batches with the matching mix of pretraining and task transitions
+remember that baseline expects 1024 task frames batch each update, which accures each 2 steps
+
+
+
+
