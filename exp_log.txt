@@ -14,7 +14,7 @@ options to count steps:
 progress for the regular warmup steps, then train the network for X steps using only the pretraining buffer. the amount of steps should be similar to the number of batches currentlly taken in buffered versions, until 
 real task transitions start to apear. then continue preparing training batches with the matching mix of pretraining and task transitions
 remember that baseline expects 1024 task frames batch each update, which accures each 2 steps
-
+so we can continue collecting steps from both buffers until we collected 1024 frames of the original task
 
 
 

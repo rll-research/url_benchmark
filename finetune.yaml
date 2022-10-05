@@ -22,24 +22,30 @@ snapshot_ts: 100000
 snapshot_base_dir: /code/url_benchmark/models/
 # replay buffer
 replay_buffer_size: 1000000
-replay_buffer_num_workers: 0
+replay_buffer_num_workers: 4
 batch_size: ${agent.batch_size}
 nstep: ${agent.nstep}
 update_encoder: false # can be either true or false depending if we want to fine-tune encoder
 # misc
 seed: 1
 device: cuda
-save_video: true
+save_video: false
 save_train_video: false
 use_tb: false
 use_wandb: true
 # experiment
 experiment: exp
-group_name: ddpg_rebuffered_walk
+group_name: ddpg_rebuffered_quad_run
 # buffer_dir: /code/url_benchmark/exp_local/2022.08.11/135826_icm/
+# buffer_dir: /code/url_benchmark/exp_local/2022.09.29/quad_run_buffer/
+# buffer_dir: /code/url_benchmark/exp_local/2022.09.29/quad_jump_buffer/
 # buffer_dir: /code/url_benchmark/exp_local/2022.08.13/201155_icm/
 # buffer_dir: /code/url_benchmark/exp_local/2022.08.13/201155_icm_run/
-buffer_dir: /code/url_benchmark/exp_local/2022.08.13/201155_icm_jump/
+#buffer_dir: /code/url_benchmark/exp_local/2022.08.18/124112_rnd_quad_jump_buf/
+buffer_dir: /code/url_benchmark/exp_local/2022.08.18/124112_rnd_quad_run_buf/
+#buffer_dir: /code/url_benchmark/exp_local/2022.08.18/124119_rnd_walker_flip_buf/
+#buffer_dir: /code/url_benchmark/exp_local/2022.08.18/124119_rnd_walker_run_buf/
+batch_sched: normal
 save_buffer: true
 
 

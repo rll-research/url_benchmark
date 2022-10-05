@@ -8,3 +8,8 @@ icm_quad_buffer/
 rnd_quad_buffer/
 rnd_walker_buffer/
 
+
+models/states/quadruped
+models/states/walker/icm
+models/states/walker/rnd
+.nvim/dap.json
