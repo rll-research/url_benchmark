@@ -170,17 +170,52 @@ class ReplayBuffer(IterableDataset):
             yield self._sample()
 
 
+
+def get_num_of_batches(x):
+    iter_num = 548076/(x+96152)
+    return iter_num
+
+def create_batch_generator(batch_size):
+    def build_batch_sample_order():
+        for idx, i in enumerate(range(0, 1000000, 2)):
+            batch_steps = int(np.rint(get_num_of_batches(i)))
+            for i in range(batch_steps):
+                batch_sources = np.random.choice([False,True], size=(batch_size), p=[idx/1e6, 1-idx/1e6]) # False - real, True - pretrain
+                for bit in batch_sources:
+                    yield bit
+        while True:
+            yield False
+
+    return build_batch_sample_order
+
+class BufferedReplayBuffer(IterableDataset):
+    def __init__(self, storage, exploration_buffer, max_size, num_workers, nstep, discount,
+                 fetch_every, save_snapshot):
+        self.replay_buffer = ReplayBuffer(storage, max_size, num_workers, nstep, discount,
+                 fetch_every, save_snapshot)
+        self.exploration_buffer = ReplayBuffer(exploration_buffer, max_size, num_workers, nstep, discount,
+                 fetch_every, save_snapshot)
+        self.sample_order = iter(create_batch_generator(1028)())
+
+    def __iter__(self) :
+        while True:
+            if not next(self.sample_order):
+                self.replay_buffer._sample()
+            else:
+                self.exploration_buffer._sample()
+
 def _worker_init_fn(worker_id):
     seed = np.random.get_state()[1][0] + worker_id
     np.random.seed(seed)
     random.seed(seed)
 
 
-def make_replay_loader(storage, max_size, batch_size, num_workers,
+def make_replay_loader(storage, exploration_buffer, max_size, batch_size, num_workers,
                        save_snapshot, nstep, discount):
     max_size_per_worker = max_size // max(1, num_workers)
 
-    iterable = ReplayBuffer(storage,
+    iterable = BufferedReplayBuffer(storage,
+                            exploration_buffer,
                             max_size_per_worker,
                             num_workers,
                             nstep,
