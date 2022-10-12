@@ -177,12 +177,15 @@ def get_num_of_batches(x):
 
 def create_batch_generator(batch_size):
     def build_batch_sample_order():
-        for idx, i in enumerate(range(0, 1000000, 2)):
-            batch_steps = int(np.rint(get_num_of_batches(i)))
-            for i in range(batch_steps):
-                batch_sources = np.random.choice([False,True], size=(batch_size), p=[idx/1e6, 1-idx/1e6]) # False - real, True - pretrain
+        for step_i in range(0, 1000000, 2):
+            batch_steps = int(np.rint(get_num_of_batches(step_i)))
+            for batch_i in range(batch_steps):
+                batch_sources = np.random.choice([False,True], size=(batch_size), p=[step_i/1e6, 1-step_i/1e6]) # False - real, True - pretrain
                 for bit in batch_sources:
-                    yield bit
+                    if step_i < 4:
+                        yield True
+                    else:
+                        yield bit
         while True:
             yield False
 
@@ -194,15 +197,18 @@ class BufferedReplayBuffer(IterableDataset):
         self.replay_buffer = ReplayBuffer(storage, max_size, num_workers, nstep, discount,
                  fetch_every, save_snapshot)
         self.exploration_buffer = ReplayBuffer(exploration_buffer, max_size, num_workers, nstep, discount,
-                 fetch_every, save_snapshot)
+                 int(4e6), save_snapshot) #dont fetch static pretrain buffer
         self.sample_order = iter(create_batch_generator(1028)())
 
     def __iter__(self) :
         while True:
-            if not next(self.sample_order):
-                self.replay_buffer._sample()
+            if not next(self.sample_order) and self.replay_buffer._storage._num_transitions > 0:
+                try:
+                    yield self.replay_buffer._sample()
+                except Exception as _:
+                    yield self.exploration_buffer._sample()
             else:
-                self.exploration_buffer._sample()
+                yield self.exploration_buffer._sample()
 
 def _worker_init_fn(worker_id):
     seed = np.random.get_state()[1][0] + worker_id
